@@ -1,10 +1,8 @@
 import cvxpy as cp
 import matplotlib.pyplot as plt
 import numpy as np
-from jax import numpy as jnp
-from models.obstacles import *
-from models.single_integrator import *
-from jax import lax, jit, jacrev
+from obstacles import *
+from single_integrator import *
 from r_robustness import directed_milp_r_robustness
 
 plt.ion()
@@ -38,8 +36,8 @@ M = 10**5
 #Initialize the robots
 robots = []
 y_offset = 0.9
-robots.append( Agent(np.array([-1.1,y_offset - 0.5]),'#d62728',1.0, ax, F,0))
-robots.append( Agent(np.array([-0.8,y_offset - 1.0]),'#d62728',1.0 , ax, F,1))
+robots.append( Malicious(np.array([-1.1,y_offset - 0.5]),'#d62728',1.0, ax, F,0))
+robots.append( Malicious(np.array([-0.8,y_offset - 1.0]),'#d62728',1.0 , ax, F,1))
 robots.append( Agent(np.array([0.8,y_offset - 1.2]),'#1f77b4',1.0 , ax, F,2))
 robots.append( Agent(np.array([0.1,y_offset - 2.1]),'#1f77b4',1.0 , ax, F,3))
 robots.append( Agent(np.array([0.4,y_offset - 1.6]),'#1f77b4',1.0 , ax, F,4))
@@ -51,12 +49,10 @@ robots.append( Agent(np.array([-0.9,y_offset - 0.4]),'#1f77b4',1.0 , ax, F,9))
 robots.append( Agent(np.array([1.3,y_offset - 0.6]),'#1f77b4',1.0 , ax, F,10))
 
 num_robots = n =len(robots)
-inter_collision = n
-F_prime = F + int(n/2)
-num_constraints1  = 1 + inter_collision + num_obstacles
-alphas = 0.8
-col_alpha = 1.5
-obs_alpha = 0.6 
+F_prime = F + n // 2 +1
+num_constraints1  = 1 + num_obstacles
+alphas = 0.4
+
 ############################## Optimization problems ######################################
 u1 = cp.Variable((2,1))
 u1_ref = cp.Parameter((2,1),value = np.zeros((2,1)) )
@@ -72,11 +68,11 @@ cbf_controller = cp.Problem( objective1, const1 )
 #Define the parametrized sigmoid functions
 eps = 1/(n-1)- 0.001
 k1 = 2+eps
-k2 = 0.10
-q1 = 1.3   #1.20
+k2 = 0.05
+q1 = 1.1   #1.20
 q2 = k1*q1/k2
-sigmoid_A1 = lambda x: k1 / (1+jnp.exp(-q1*x)) - k1/2
-sigmoid_A2 = lambda x: k2 / (1+jnp.exp(-q2*x)) - k2/2
+sigmoid_A1 = lambda x: k1 / (1+np.exp(-q1*x)) - k1/2
+sigmoid_A2 = lambda x: k2 / (1+np.exp(-q2*x)) - k2/2
 def compute_der(x_i, x_j):
     dist = R**2 - np.sum((x_i-x_j)**2)
     exp_term = 2 * k1 * q1* np.exp(-q1 *dist)
@@ -101,9 +97,7 @@ while True:
         for j in range(i+1,n):
             if np.linalg.norm(x[i]-x[j]) <=R:
                 edges.append((i,j))
-    r_real = directed_milp_r_robustness(edges, n)
-    print("desired:", F+1, "r-robustness:",r_real)
-    robustness_history.append(r_real)
+
     #Agents form a network
     for (i,j) in edges:
         robots[i].connect(robots[j])
@@ -167,31 +161,45 @@ while True:
             control_input.append(np.array([[0],[0]]))
         else:
             control_input.append(u1.value)
-            
+
+    if counter % 20==0:
+        #Agents share their values with neighbors
+        for aa in robots:
+            aa.propagate()
+        # The agents perform W-MSR
+        for aa in robots:
+            aa.w_msr()
+        # All the agents update their LED colors
+        for aa in robots:
+            aa.set_color()
+
     # implement control input \mathbf u and plot the trajectory
     for i in range(n):
         robots[i].step2(control_input[i]) 
-        robots[i].w_msr()
-
+        if counter>0:
+            plt.plot(robots[i].locations[0][counter-1:counter+1], robots[i].locations[1][counter-1:counter+1], color = robots[i].LED, zorder=0)   
     #Plots the environment and robots
-    fig.canvas.draw()
-    lines = []
-    for (i, j) in edges:
-        lines.append(plt.plot(
-            [x[i][0], x[j][0]],
-            [x[i][1], x[j][1]],
-            linestyle='--', color='#555555', zorder=0, linewidth=1.5
-        ))
+    # fig.canvas.draw()
+    # lines = []
+    # for (i, j) in edges:
+    #     l_color = '#555555'
+    #     if i<=1 or j<=1:
+    #         l_color = '#FF0000'
+    #     lines.append(plt.plot(
+    #         [x[i][0], x[j][0]],
+    #         [x[i][1], x[j][1]],
+    #         linestyle='--', color=l_color, zorder=0, linewidth=1.5
+    #     ))
 
-    fig.canvas.flush_events()  
-    for line in lines:
-        l = line[0]
-        l.remove()
+    # fig.canvas.flush_events()  
+    # for line in lines:
+    #     l = line[0]
+    #     l.remove()
 
     #If time, terminate
     counter+=1
 
-    if counter>=200:
+    if counter>=50:
         break
 
 
@@ -206,12 +214,20 @@ fig2 = plt.figure()
 # plt.show()
 
 #Plot the evolutions of h_{i}'s values
-for i in range(n):
-    plt.plot(np.arange(counter), H[i], label="$h_{" +  str(i)+ '}$')
-    plt.plot(np.arange(counter), [0]*counter, 'k--',label="threshold", )
+# for i in range(n):
+#     plt.plot(np.arange(counter), H[i], label="$h_{" +  str(i)+ '}$')
+#     plt.plot(np.arange(counter), [0]*counter, 'k--',label="threshold", )
 
-plt.title("Evolution of $h_i$")
+# plt.title("Evolution of $h_i$")
+# plt.show()
+
+
+
+#Plot the evolutions of consensus values representing the RGB values
+for aa in robots:
+    length = len(aa.history)
+    if issubclass(type(aa), Malicious):
+        plt.plot(np.arange(length), aa.history, "r--")
+    else: 
+        plt.plot(np.arange(length), aa.history)
 plt.show()
-
-
-

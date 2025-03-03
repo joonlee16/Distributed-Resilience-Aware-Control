@@ -1,11 +1,9 @@
 import cvxpy as cp
 import matplotlib.pyplot as plt
 import numpy as np
-from jax import numpy as jnp
-from models.obstacles import *
-from models.single_integrator import *
-from jax import lax, jit, jacrev
-from r_robustness import directed_milp_r_robustness
+from obstacles import *
+from single_integrator import *
+# from r_robustness import directed_milp_r_robustness
 
 plt.ion()
 fig = plt.figure()
