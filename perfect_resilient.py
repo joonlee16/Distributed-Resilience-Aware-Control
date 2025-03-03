@@ -49,16 +49,17 @@ robots.append( Agent(np.array([-0.9,y_offset - 0.4]),'#1f77b4',1.0 , ax, F,9))
 robots.append( Agent(np.array([1.3,y_offset - 0.6]),'#1f77b4',1.0 , ax, F,10))
 
 num_robots = n =len(robots)
-F_prime = F + n // 2 +1
+F_prime = F + n // 2
 num_constraints1  = 1 + num_obstacles
 alphas = 0.4
-
+umax = 2.5
 ############################## Optimization problems ######################################
 u1 = cp.Variable((2,1))
 u1_ref = cp.Parameter((2,1),value = np.zeros((2,1)) )
 A1 = cp.Parameter((num_constraints1,2),value=np.zeros((num_constraints1,2)))
 b1 = cp.Parameter((num_constraints1,1),value=np.zeros((num_constraints1,1)))
 const1 = [A1 @ u1 >= b1]
+const1+= [u1<=umax, -umax<=u1]
 
 objective1 = cp.Minimize( cp.sum_squares( u1 - u1_ref  ))
 cbf_controller = cp.Problem( objective1, const1 )
@@ -69,7 +70,7 @@ cbf_controller = cp.Problem( objective1, const1 )
 eps = 1/(n-1)- 0.001
 k1 = 2+eps
 k2 = 0.05
-q1 = 1.1   #1.20
+q1 = 1.0   #1.20
 q2 = k1*q1/k2
 sigmoid_A1 = lambda x: k1 / (1+np.exp(-q1*x)) - k1/2
 sigmoid_A2 = lambda x: k2 / (1+np.exp(-q2*x)) - k2/2
@@ -134,7 +135,7 @@ while True:
     b1.value[:,:]=0
     control_input = []
 
-    w = [15, 15]
+    w = [8, 12]
     h_hat = h
     for i in range(num_robots):
         u1_ref.value = u_des[i]
@@ -162,7 +163,7 @@ while True:
         else:
             control_input.append(u1.value)
 
-    if counter % 20==0:
+    if counter >50 and counter% 20==0:
         #Agents share their values with neighbors
         for aa in robots:
             aa.propagate()
@@ -176,51 +177,44 @@ while True:
     # implement control input \mathbf u and plot the trajectory
     for i in range(n):
         robots[i].step2(control_input[i]) 
-        if counter>0:
-            plt.plot(robots[i].locations[0][counter-1:counter+1], robots[i].locations[1][counter-1:counter+1], color = robots[i].LED, zorder=0)   
+        robots[i].reset_neighbors()
+        # if counter>0:
+        #     plt.plot(robots[i].locations[0][counter-1:counter+1], robots[i].locations[1][counter-1:counter+1], color = robots[i].LED, zorder=0)   
+    
     #Plots the environment and robots
-    # fig.canvas.draw()
-    # lines = []
-    # for (i, j) in edges:
-    #     l_color = '#555555'
-    #     if i<=1 or j<=1:
-    #         l_color = '#FF0000'
-    #     lines.append(plt.plot(
-    #         [x[i][0], x[j][0]],
-    #         [x[i][1], x[j][1]],
-    #         linestyle='--', color=l_color, zorder=0, linewidth=1.5
-    #     ))
+    fig.canvas.draw()
+    lines = []
+    for (i, j) in edges:
+        l_color = '#555555'
+        if i<=1 or j<=1:
+            l_color = '#FF0000'
+        lines.append(plt.plot(
+            [x[i][0], x[j][0]],
+            [x[i][1], x[j][1]],
+            linestyle='--', color=l_color, zorder=0, linewidth=1.5
+        ))
 
-    # fig.canvas.flush_events()  
-    # for line in lines:
-    #     l = line[0]
-    #     l.remove()
+    fig.canvas.flush_events()  
+    for line in lines:
+        l = line[0]
+        l.remove()
 
     #If time, terminate
     counter+=1
 
-    if counter>=50:
+    if counter>=500:
         break
 
 
 plt.ioff()
 fig2 = plt.figure()
 
-#Plot the robustness history
-# plt.plot(np.arange(counter),robustness_history,label="r")
-# plt.plot(np.arange(counter),np.ones(counter)*(F+1),label="desired r")
-# plt.title("$r$-robustness")
-# plt.legend()
-# plt.show()
-
 #Plot the evolutions of h_{i}'s values
-# for i in range(n):
-#     plt.plot(np.arange(counter), H[i], label="$h_{" +  str(i)+ '}$')
-#     plt.plot(np.arange(counter), [0]*counter, 'k--',label="threshold", )
-
-# plt.title("Evolution of $h_i$")
-# plt.show()
-
+for i in range(n):
+    plt.plot(np.arange(counter), H[i], label="$h_{" +  str(i)+ '}$')
+    plt.plot(np.arange(counter), [0]*counter, 'k--',label="threshold", )
+plt.title("Evolution of $h_i$")
+plt.show()
 
 
 #Plot the evolutions of consensus values representing the RGB values

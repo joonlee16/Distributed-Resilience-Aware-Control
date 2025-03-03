@@ -2,19 +2,15 @@ import numpy as np
 from random import randint
 from scipy.integrate import solve_ivp 
 import matplotlib.cm as cm
-import matplotlib.colors as mcolors
 
 class Agent:
     def __init__(self,location, color, palpha, ax, F, id):
         self.location = location.reshape(2,-1)
         self.locations = [[],[]]
-        self.Us = []
         self.color = color
         self.palpha = palpha
         self.body = ax.scatter([],[],c=color,edgecolors='black',alpha=palpha,s=150)
-        self.obs_h = np.ones((1,2))
-        self.obs_alpha =  2.0*np.ones((1,2))#
-        self.value= randint(0,500)        
+        self.value= randint(0,1000)        
         self.original = self.value
         self.connections = []
         self.F = F
@@ -34,18 +30,14 @@ class Agent:
         def model(t, y):
             dydt = self.g()@ self.U
             return dydt.reshape(-1,2)[0]
-        steps = solve_ivp(model, [0,0.01], self.location.reshape(-1,2)[0])
+        steps = solve_ivp(model, [0,0.005], self.location.reshape(-1,2)[0])
         what = np.array([steps.y[0][-1], steps.y[1][-1]])
         self.location = what.reshape(2,-1)
         self.render_plot()
-        temp = np.array([self.U[0][0],self.U[1][0]])
-        self.Us = np.append(self.Us,temp)
         return self.location
 
     def set_color(self):
-        norm = mcolors.Normalize(vmin=0, vmax=100)
-        self.LED = cm.viridis(norm(self.value))
-
+        self.LED = cm.tab20(self.value/1000)
 
     def render_plot(self):
         x = np.array([self.location[0][0],self.location[1][0]])
@@ -68,6 +60,9 @@ class Agent:
 
     def neighbors_id(self):
         return [aa.id for aa in self.connections]
+    
+    def reset_neighbors(self):
+        self.connections = []
 
     def propagate(self):
         for neigh in self.neighbors():
@@ -95,7 +90,6 @@ class Agent:
         big_list = sorted(big_list)
         big_list = big_list[:-self.F]
         comb_list = small_list+ comb_list + big_list
-        # print(self.id,comb_list)
         total_list =len(comb_list)
         weight = 1/(total_list+1)
         weights = [weight for i in range(total_list)]
@@ -109,13 +103,13 @@ class Malicious(Agent):
     def __init__(self, location, color, palpha, ax, F, id):
         super().__init__(location, color, palpha, ax, F, id)
         self.time = 0
-        self.value = 500*np.abs(1-np.sin(self.time))
+        self.value = 1000*np.abs(np.sin(np.pi/2*self.id+self.time/3))
         self.history = [self.value]
 
     # Sends wrong values to all of its neighbors
     def propagate(self):
         self.time+=1
-        self.value = 500*np.abs(1-np.sin(self.time))
+        self.value = 1000*np.abs(np.sin(np.pi/2*self.id+self.time/3))
         for neigh in self.neighbors():
             neigh.receive(self.value)
         return self.value
