@@ -7,7 +7,7 @@ from r_robustness import directed_milp_r_robustness
 
 plt.ion()
 fig = plt.figure()
-ax = plt.axes(xlim=(-4,4),ylim=(-2,2)) 
+ax = plt.axes(xlim=(-3,3),ylim=(-1.5,1.5)) 
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
 
@@ -51,7 +51,7 @@ robots.append( Agent(np.array([1.3,y_offset - 0.6]),'#1f77b4',1.0 , ax, F,10))
 num_robots = n =len(robots)
 F_prime = F + n // 2
 num_constraints1  = 1 + num_obstacles
-alphas = 0.2
+alphas = 0.4
 umax = 2.5
 ############################## Optimization problems ######################################
 u1 = cp.Variable((2,1))
@@ -137,7 +137,7 @@ while True:
 
     w = [7, 12]
     h_hat = h
-    h_hat[0:2]+=3
+    h_hat[0:2]+=3.5
     for i in range(num_robots):
         u1_ref.value = u_des[i]
         N_i = robots[i].neighbors_id()
@@ -183,22 +183,23 @@ while True:
         #     plt.plot(robots[i].locations[0][counter-1:counter+1], robots[i].locations[1][counter-1:counter+1], color = robots[i].LED, zorder=0)   
     
     #Plots the environment and robots
-    fig.canvas.draw()
-    lines = []
-    for (i, j) in edges:
-        l_color = '#555555'
-        if i<=1 or j<=1:
-            l_color = '#FF0000'
-        lines.append(plt.plot(
-            [x[i][0], x[j][0]],
-            [x[i][1], x[j][1]],
-            linestyle='--', color=l_color, zorder=0, linewidth=1.5
-        ))
+    if counter>=480:
+        fig.canvas.draw()
+        lines = []
+        for (i, j) in edges:
+            l_color = '#555555'
+            if i<=1 or j<=1:
+                l_color = '#FF0000'
+            lines.append(plt.plot(
+                [x[i][0], x[j][0]],
+                [x[i][1], x[j][1]],
+                linestyle='--', color=l_color, zorder=0, linewidth=1.5
+            ))
 
-    fig.canvas.flush_events()  
-    for line in lines:
-        l = line[0]
-        l.remove()
+        fig.canvas.flush_events()  
+        for line in lines:
+            l = line[0]
+            l.remove()
 
     #If time, terminate
     counter+=1

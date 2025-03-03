@@ -10,7 +10,7 @@ class Agent:
         self.color = color
         self.palpha = palpha
         self.body = ax.scatter([],[],c=color,edgecolors='black',alpha=palpha,s=150)
-        self.value= randint(0,1000)        
+        self.value= randint(-500,500)        
         self.original = self.value
         self.connections = []
         self.F = F
@@ -37,7 +37,7 @@ class Agent:
         return self.location
 
     def set_color(self):
-        self.LED = cm.tab20(self.value/1000)
+        self.LED = cm.tab20((self.value+500)/1000)
 
     def render_plot(self):
         x = np.array([self.location[0][0],self.location[1][0]])
@@ -103,13 +103,13 @@ class Malicious(Agent):
     def __init__(self, location, color, palpha, ax, F, id):
         super().__init__(location, color, palpha, ax, F, id)
         self.time = 0
-        self.value = 1000*np.abs(np.sin(np.pi/2*self.id+self.time/3))
+        self.value = 500*np.sin(self.id+self.time/3.5)
         self.history = [self.value]
 
     # Sends wrong values to all of its neighbors
     def propagate(self):
         self.time+=1
-        self.value = 1000*np.abs(np.sin(np.pi/2*self.id+self.time/3))
+        self.value = 500*np.sin(self.id+self.time/3.5)
         for neigh in self.neighbors():
             neigh.receive(self.value)
         return self.value

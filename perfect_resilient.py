@@ -7,7 +7,7 @@ from r_robustness import directed_milp_r_robustness
 
 plt.ion()
 fig = plt.figure()
-ax = plt.axes(xlim=(-4,4),ylim=(-2,2)) 
+ax = plt.axes(xlim=(-3,3),ylim=(-1.5,1.5)) 
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
 
@@ -202,7 +202,7 @@ while True:
     #If time, terminate
     counter+=1
 
-    if counter>=500:
+    if counter>=700:
         break
 
 
