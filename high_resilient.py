@@ -7,7 +7,7 @@ from r_robustness import directed_milp_r_robustness
 
 plt.ion()
 fig = plt.figure()
-ax = plt.axes(xlim=(-4,4),ylim=(-1.5,1.5)) 
+ax = plt.axes(xlim=(-3.25,3.25),ylim=(-1.5,1.5)) 
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
 
@@ -189,23 +189,22 @@ while True:
         #     plt.plot(robots[i].locations[0][counter-1:counter+1], robots[i].locations[1][counter-1:counter+1], color = robots[i].LED, zorder=0)   
     
     #Plots the environment and robots
-    if counter>=max_T-100:
-        fig.canvas.draw()
-        lines = []
-        for (i, j) in edges:
-            l_color = '#555555'
-            if i<=1 or j<=1:
-                l_color = '#FF0000'
-            lines.append(plt.plot(
-                [x[i][0], x[j][0]],
-                [x[i][1], x[j][1]],
-                linestyle='--', color=l_color, zorder=0, linewidth=1.5
-            ))
+    fig.canvas.draw()
+    lines = []
+    for (i, j) in edges:
+        l_color = '#555555'
+        if i<=1 or j<=1:
+            l_color = '#FF0000'
+        lines.append(plt.plot(
+            [x[i][0], x[j][0]],
+            [x[i][1], x[j][1]],
+            linestyle='--', color=l_color, zorder=0, linewidth=1.5
+        ))
 
-        fig.canvas.flush_events()  
-        for line in lines:
-            l = line[0]
-            l.remove()
+    fig.canvas.flush_events()  
+    for line in lines:
+        l = line[0]
+        l.remove()
 
     #If time, terminate
     counter+=1

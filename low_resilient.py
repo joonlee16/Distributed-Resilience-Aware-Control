@@ -7,7 +7,7 @@ from r_robustness import directed_milp_r_robustness
 
 plt.ion()
 fig = plt.figure()
-ax = plt.axes(xlim=(-3,3),ylim=(-1.5,1.5)) 
+ax = plt.axes(xlim=(-3.25,3.25),ylim=(-1.5,1.5)) 
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
 
