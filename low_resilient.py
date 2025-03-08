@@ -31,7 +31,6 @@ num_obstacles = len(obstacles)
 F = 2
 R = 3
 d_min = 0.5
-M = 10**5
 
 #Initialize the robots
 robots = []
@@ -51,8 +50,14 @@ robots.append( Agent(np.array([1.3,y_offset - 0.6]),'#1f77b4',1.0 , ax, F,10))
 num_robots = n =len(robots)
 F_prime = F + n // 2
 num_constraints1  = 1 + num_obstacles
-alphas = 0.2
-umax = 2.5
+alphas = 0.1
+umax = 3
+tau = 1
+T=10
+dt =0.002
+max_T = T/dt
+step_size = tau/dt
+
 ############################## Optimization problems ######################################
 u1 = cp.Variable((2,1))
 u1_ref = cp.Parameter((2,1),value = np.zeros((2,1)) )
@@ -70,7 +75,7 @@ cbf_controller = cp.Problem( objective1, const1 )
 eps = 1/(n-1)- 0.001
 k1 = 2+eps
 k2 = 0.05
-q1 = 0.9   #1.20
+q1 = 0.9 
 q2 = k1*q1/k2
 sigmoid_A1 = lambda x: k1 / (1+np.exp(-q1*x)) - k1/2
 sigmoid_A2 = lambda x: k2 / (1+np.exp(-q2*x)) - k2/2
@@ -111,7 +116,6 @@ while True:
         if i in range(6, 12):
             helper= (-1)**i * np.array([100, 0]) 
         vector = (helper - x[i-1]).reshape(-1,1)
-        # vector = (goal - x[i]).reshape(-1,1)
         u_des.append(vector/np.linalg.norm(vector)) 
 
     #Compute the h_i and \partial h_i
@@ -126,18 +130,20 @@ while True:
         der_[i,j]= -compute_der(x[i],x[j])
         der_[j,j]+=compute_der(x[j],x[i])
         der_[j,i]= -compute_der(x[j],x[i]) 
-    print(counter, h-F_prime)
+    h = h-F_prime
     for i in range(n):
-        H[i].append(h[i]-F_prime)
+        H[i].append(h[i])
 
     #Set up the constraint of QP
     A1.value[:,:]=0
     b1.value[:,:]=0
     control_input = []
 
-    w = [7, 12]
+    w = [15, 25]    
     h_hat = h
     h_hat[0:2]-=3
+    if np.any(h_hat<0):
+        print(counter, h_hat)
     for i in range(num_robots):
         u1_ref.value = u_des[i]
         N_i = robots[i].neighbors_id()
@@ -152,11 +158,10 @@ while True:
         c_exp_list = np.exp(-w[1]*c).reshape((1,-1))
         c_exp_der = c_exp_list*w[1]
 
-        exp_list = np.exp(-w[0]*(h_hat[B_i]-F_prime)).reshape((1,-1))
+        exp_list = np.exp(-w[0]*(h_hat[B_i])).reshape((1,-1))
         exp_der = exp_list*w[0]
         A1.value[0,:]= exp_der @ (der_[B_i,i].reshape(-1,2)) + c_exp_der @ (c_der_.reshape(-1,2))
-        b1.value[0,0]= -alphas*(1/n-sum(exp_list[0])/(F_prime+1)) - alphas*(sum(c_exp_list[0]))/2
-
+        b1.value[0,0]= -alphas*(1/n-sum(exp_list[0])/(F_prime+1)) + alphas*(sum(c_exp_list[0]))/2
         cbf_controller.solve(solver="GUROBI")
         if cbf_controller.status!='optimal':
             print("Error: should not have been infeasible here")
@@ -164,7 +169,7 @@ while True:
         else:
             control_input.append(u1.value)
 
-    if counter >50 and counter% 20==0:
+    if counter >50 and counter% step_size ==0:
         #Agents share their values with neighbors
         for aa in robots:
             aa.propagate()
@@ -177,7 +182,7 @@ while True:
 
     # implement control input \mathbf u and plot the trajectory
     for i in range(n):
-        robots[i].step2(control_input[i]) 
+        robots[i].step(control_input[i], dt) 
         robots[i].reset_neighbors()
         # if counter>0:
         #     plt.plot(robots[i].locations[0][counter-1:counter+1], robots[i].locations[1][counter-1:counter+1], color = robots[i].LED, zorder=0)   
@@ -203,7 +208,7 @@ while True:
     #If time, terminate
     counter+=1
 
-    if counter>=500:
+    if counter>=max_T:
         break
 
 
@@ -212,17 +217,21 @@ fig2 = plt.figure()
 
 #Plot the evolutions of h_{i}'s values
 for i in range(n):
-    plt.plot(np.arange(counter), H[i], label="$h_{" +  str(i)+ '}$')
-    plt.plot(np.arange(counter), [0]*counter, 'k--',label="threshold", )
+    if i <=1:
+        plt.plot(np.arange(counter), H[i],linestyle='dashdot', label="$h_{" +  str(i)+ '}$')
+    else:
+        plt.plot(np.arange(counter), H[i], label="$h_{" +  str(i)+ '}$')
+plt.plot(np.arange(counter), [0]*counter, 'k--',label="threshold", )
 plt.title("Evolution of $h_i$")
 plt.show()
 
 
-#Plot the evolutions of consensus values representing the RGB values
+#Plot the evolutions of consensus values
+length_of_consensus = len(robots[0].history)*step_size
 for aa in robots:
-    length = len(aa.history)
+    temp = np.repeat(np.array(aa.history),step_size)
     if issubclass(type(aa), Malicious):
-        plt.plot(np.arange(length), aa.history, "r--")
-    else: 
-        plt.plot(np.arange(length), aa.history)
+        plt.plot(np.arange(0,length_of_consensus)*dt,temp, "r--")
+    else:
+        plt.plot(np.arange(0,length_of_consensus)*dt, temp)
 plt.show()

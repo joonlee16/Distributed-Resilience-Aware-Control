@@ -25,12 +25,12 @@ class Agent:
     def g(self):
         return np.array([ [1, 0],[0, 1] ])
     
-    def step2(self, U):
+    def step(self, U, dt):
         self.U = U
         def model(t, y):
             dydt = self.g()@ self.U
             return dydt.reshape(-1,2)[0]
-        steps = solve_ivp(model, [0,0.005], self.location.reshape(-1,2)[0])
+        steps = solve_ivp(model, [0,dt], self.location.reshape(-1,2)[0])
         what = np.array([steps.y[0][-1], steps.y[1][-1]])
         self.location = what.reshape(2,-1)
         self.render_plot()
