@@ -73,15 +73,14 @@ cbf_controller = cp.Problem( objective1, const1 )
 
 #Define the parametrized sigmoid functions
 eps = 1/(n-1)- 0.001
-k1 = 2+eps
+q1 = 2+eps
 k2 = 0.05
-q1 = 0.9
-q2 = k1*q1/k2
-sigmoid_A1 = lambda x: k1 / (1+np.exp(-q1*x)) - k1/2
-sigmoid_A2 = lambda x: k2 / (1+np.exp(-q2*x)) - k2/2
+q2 = 0.9 
+q2 = q1*q2/k2
+sigmoid_A1 = lambda x: q1 / (1+np.exp(-q2*x)) - q1/2
 def compute_der(x_i, x_j):
     dist = R**2 - np.sum((x_i-x_j)**2)
-    exp_term = 2 * k1 * q1* np.exp(-q1 *dist)
+    exp_term = 2 * q1 * q2* np.exp(-q2 *dist)
     denominator = (1 + exp_term)**2
     coefficient = exp_term / denominator
     return - coefficient * ((x_i - x_j))
