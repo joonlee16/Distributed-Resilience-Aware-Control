@@ -74,16 +74,14 @@ cbf_controller = cp.Problem( objective1, const1 )
 #Define the parametrized sigmoid functions
 eps = 1/(n-1)- 0.001
 q1 = 2+eps
-k2 = 0.05
 q2 = 0.9 
-q2 = q1*q2/k2
 sigmoid_A1 = lambda x: q1 / (1+np.exp(-q2*x)) - q1/2
 def compute_der(x_i, x_j):
-    dist = R**2 - np.sum((x_i-x_j)**2)
+    dist = (R**2 - np.sum((x_i-x_j)**2))**2
     exp_term = 2 * q1 * q2* np.exp(-q2 *dist)
     denominator = (1 + exp_term)**2
     coefficient = exp_term / denominator
-    return - coefficient * ((x_i - x_j))
+    return - coefficient * ((x_i - x_j))*2*(R**2 - np.sum((x_i-x_j)**2))
 
 #Setting up the goal
 goal = np.array([[0,100],[100,0]])
@@ -138,9 +136,9 @@ while True:
     b1.value[:,:]=0
     control_input = []
 
-    w = [15, 25]    
+    w = [17.5, 30]    
     h_hat = h
-    h_hat[0:2]-=3
+    h_hat[0:2]-=2.5
     if np.any(h_hat<0):
         print(counter, h_hat)
     for i in range(num_robots):
@@ -164,6 +162,7 @@ while True:
         cbf_controller.solve(solver="GUROBI")
         if cbf_controller.status!='optimal':
             print("Error: should not have been infeasible here")
+            print(h_hat)
             control_input.append(np.array([[0],[0]]))
         else:
             control_input.append(u1.value)
