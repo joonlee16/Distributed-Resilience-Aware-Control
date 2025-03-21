@@ -127,6 +127,7 @@ while True:
         der_[i,j]= -compute_der(x[i],x[j])
         der_[j,j]+=compute_der(x[j],x[i])
         der_[j,i]= -compute_der(x[j],x[i]) 
+
     h = h-F_prime
     for i in range(n):
         H[i].append(h[i])
@@ -216,11 +217,12 @@ fig2 = plt.figure()
 #Plot the evolutions of h_{i}'s values
 for i in range(n):
     if i <=1:
-        plt.plot(np.arange(counter), H[i],linestyle='dashdot', label="$h_{" +  str(i)+ '}$')
+        plt.plot(np.arange(counter), H[i],"r--")
     else:
-        plt.plot(np.arange(counter), H[i], label="$h_{" +  str(i)+ '}$')
-plt.plot(np.arange(counter), [0]*counter, 'k--',label="threshold", )
+        plt.plot(np.arange(counter), H[i], color="C{}".format(i % 10))
+plt.plot(np.arange(counter), [0]*counter, 'k--')
 plt.title("Evolution of $h_i$")
+# plt.yticks(np.arange(-1, 4, 1.0))
 plt.show()
 
 

@@ -130,7 +130,6 @@ while True:
     h = h-F_prime
     for i in range(n):
         H[i].append(h[i])
-
     #Set up the constraint of QP
     A1.value[:,:]=0
     b1.value[:,:]=0
@@ -220,6 +219,7 @@ for i in range(n):
         plt.plot(np.arange(counter), H[i], label="$h_{" +  str(i)+ '}$')
 plt.plot(np.arange(counter), [0]*counter, 'k--',label="threshold", )
 plt.title("Evolution of $h_i$")
+plt.yticks(np.arange(-1, 4, 1.0))
 plt.show()
 
 
