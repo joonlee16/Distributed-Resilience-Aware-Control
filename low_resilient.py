@@ -136,7 +136,7 @@ while True:
     b1.value[:,:]=0
     control_input = []
 
-    w = [17.5, 30]    
+    w = [10, 30]    
     h_hat = h
     h_hat[0:2]-=2.5
     if np.any(h_hat<0):
@@ -156,9 +156,13 @@ while True:
         c_exp_der = c_exp_list*w[1]
 
         exp_list = np.exp(-w[0]*(h_hat[B_i])).reshape((1,-1))
+
+        exp_list1 = np.exp(-w[0]*(h_hat[i]))
+
         exp_der = exp_list*w[0]
         A1.value[0,:]= exp_der @ (der_[B_i,i].reshape(-1,2)) + c_exp_der @ (c_der_.reshape(-1,2))
-        b1.value[0,0]= -alphas*(1/n-sum(exp_list[0])/(F_prime+1)) + alphas*(sum(c_exp_list[0]))/2
+        # b1.value[0,0]= -alphas*(1/n-sum(exp_list[0])/(F_prime+1)) + alphas*(sum(c_exp_list[0]))/2
+        b1.value[0,0]= -alphas*(1/n-exp_list1) + alphas*(sum(c_exp_list[0]))/2
         cbf_controller.solve(solver="GUROBI")
         if cbf_controller.status!='optimal':
             print("Error: should not have been infeasible here")
