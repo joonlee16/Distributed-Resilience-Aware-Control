@@ -111,7 +111,6 @@ while True:
     # Store the connectivity levels
     for i in range(n):
         H[i].append(h[i])
-
     #Set up the constraint of QP
     A1.value[:,:]=0
     b1.value[:,:]=0
@@ -138,9 +137,12 @@ while True:
         c_exp_der = c_exp_list*w[1]
 
         exp_list = np.exp(-w[0]*(h_hat[B_i])).reshape((1,-1))
+
+        exp_list1 = np.exp(-w[0]*(h_hat[i]))
+
         exp_der = exp_list*w[0]
         A1.value[0,:]= exp_der @ (der_[B_i,i].reshape(-1,2)) + c_exp_der @ (c_der_.reshape(-1,2))
-        b1.value[0,0]= -alphas*(1/n-sum(exp_list[0])/(F_prime+1)) + alphas*(sum(c_exp_list[0]))/2
+        b1.value[0,0]= -alphas*(1/n-exp_list1) + alphas*(sum(c_exp_list[0]))/2
         cbf_controller.solve(solver="GUROBI")
         if cbf_controller.status!='optimal':
             print("Error: should not have been infeasible here")
@@ -201,6 +203,7 @@ for i in range(n):
         plt.plot(np.arange(counter), H[i], label="$h_{" +  str(i)+ '}$')
 plt.plot(np.arange(counter), [0]*counter, 'k--',label="threshold", )
 plt.title("Evolution of $h_i$")
+plt.yticks(np.arange(-1, 4, 1.0))
 plt.show()
 
 
