@@ -3,6 +3,8 @@ from random import randint
 from scipy.integrate import solve_ivp 
 import matplotlib.cm as cm
 
+
+## Normal agents
 class Agent:
     def __init__(self,location, color, palpha, ax, F, id):
         self.location = location.reshape(2,-1)
@@ -25,6 +27,7 @@ class Agent:
     def g(self):
         return np.array([ [1, 0],[0, 1] ])
     
+    # Updates the agent's state
     def step(self, U, dt):
         self.U = U
         def model(t, y):
@@ -36,39 +39,47 @@ class Agent:
         self.render_plot()
         return self.location
 
-    def set_color(self):
-        self.LED = cm.tab20((self.value+500)/1000)
-
+    # Updates the agent's plot 
     def render_plot(self):
         x = np.array([self.location[0][0],self.location[1][0]])
-        # scatter plot update
         self.locations[0] = np.append(self.locations[0], x[0])
         self.locations[1] = np.append(self.locations[1], x[1])
         self.body.set_offsets([x[0],x[1]])
 
+    # Computes the distance function h_{ij}^{col} between the agent i and j, and also computes its derivatives w.r.t. both agents
     def agent_barrier(self,agent,d_min):
         h =  np.linalg.norm(self.location - agent.location)**2 - d_min**2 
         dh_dxi = 2*( self.location - agent.location[0:2]).T
         dh_dxj = -2*( self.location - agent.location[0:2] ).T
         return h, dh_dxi, dh_dxj
 
+    # Forms an edge with the given agent.
     def connect(self, agent):
             self.connections.append(agent)
 
+    # Returns its neighbor set
     def neighbors(self):
         return self.connections
 
+    # Returns the list of neighboring robots
     def neighbors_id(self):
         return [aa.id for aa in self.connections]
     
+    # Resets its neighbor set 
     def reset_neighbors(self):
         self.connections = []
 
+    # Sets the agent's LED color based on its consensus state (It is used to color the past trajectory of the agent)
+    def set_color(self):
+        self.LED = cm.tab20((self.value+500)/1000)
+
+    # Shares its consensus value with its neighbors  
     def propagate(self):
         for neigh in self.neighbors():
             neigh.receive(self.value)
         return self.value
 
+    # Receives the consensus states from its neighbor
     def receive(self, value):
         self.values.append(value)
     
@@ -99,6 +110,8 @@ class Agent:
         self.history.append(self.value)
         self.values = []
 
+
+## Malicious agents
 class Malicious(Agent):
     def __init__(self, location, color, palpha, ax, F, id):
         super().__init__(location, color, palpha, ax, F, id)
@@ -113,6 +126,8 @@ class Malicious(Agent):
         for neigh in self.neighbors():
             neigh.receive(self.value)
         return self.value
+    
+    # Does not follow W-MSR to update its consensus state
     def w_msr(self):
         self.history.append(self.value)
         self.values = []
