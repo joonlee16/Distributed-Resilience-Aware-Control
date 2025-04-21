@@ -26,9 +26,12 @@ To demonstrate our work, we present three different scenarios, whose videos are 
 In all scenarios, the robots are tasked with spreading out as much as possible, which inherently conflicts with their need to maintain resilient network formation. Our controller enables robots to spread **as far as the desired network resilience is maintained**.
 
 ## Scenario 1: Nominal Update
+![nominal](https://github.com/user-attachments/assets/c5866ecc-a135-45f6-b4b4-ca8353ef64f9)
 
 ## Scenario 2: Overstatement
+![overstatement](https://github.com/user-attachments/assets/590fb1f1-75ad-4c03-b512-7c68531fe09c)
 
 ## Scenario 3: Understatement
+![understatement](https://github.com/user-attachments/assets/9cc7732b-4091-4a7e-9431-fa2dfd05834d)
 
 As it can be seen from the videos, the type of adversarial behavior directly affects the mobility and performance of the robots. For full theoretical details, implementation insights, and results, please refer to our [paper](https://arxiv.org/abs/2504.03120).
