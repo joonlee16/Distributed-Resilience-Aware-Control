@@ -122,19 +122,11 @@ while True:
         c = np.array(c); c_der_ = np.array(c_der_)
         c_exp_list = np.exp(-w[1]*c).reshape((1,-1))
         c_exp_der = c_exp_list*w[1]
-<<<<<<< HEAD:high_resilient.py
-
-=======
->>>>>>> 2f32a02022ba154d7436fe805c0c9c78f4d815e3:simulate.py
         exp_list = np.exp(-w[0]*(h_hat[B_i])).reshape((1,-1))
         exp_der = exp_list*w[0]
         A1.value[0,:]= exp_der @ (der_[B_i,i].reshape(-1,2)) + c_exp_der @ (c_der_.reshape(-1,2))
         b1.value[0,0]= -alphas*(1/n-sum(exp_list[0])/(F_prime+1)) + alphas*(sum(c_exp_list[0]))/2
-<<<<<<< HEAD:high_resilient.py
-=======
-        # b1.value[0,0]= -alphas*(1/n-exp_list1) + alphas*(sum(c_exp_list[0]))/2
 
->>>>>>> 2f32a02022ba154d7436fe805c0c9c78f4d815e3:simulate.py
         cbf_controller.solve(solver="GUROBI")
         if cbf_controller.status!='optimal':
             print("Error: should not have been infeasible here")
